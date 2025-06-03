@@ -1,0 +1,11 @@
+name: Trigger Workflow
+
+on:
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  trigger_job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run a simple step
+        run: echo "Trigger job completed."
