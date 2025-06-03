@@ -1,0 +1,34 @@
+name: Condition Test Workflow
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Condition Test Workflow"]
+    types:
+      - completed
+
+jobs:
+  first_job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run a simple step
+        run: echo "First job completed."
+
+  second_job_with_condition:
+    needs: first_job
+    runs-on: ubuntu-latest
+    if: >
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') &&
+      needs.first_job.result != 'skipped'
+    steps:
+      - name: Run if condition is met
+        run: echo "Second job with full condition completed."
+
+  third_job_without_condition:
+    needs: first_job
+    runs-on: ubuntu-latest
+    if: >
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    steps:
+      - name: Run if condition is met
+        run: echo "Third job without redundant condition completed."
