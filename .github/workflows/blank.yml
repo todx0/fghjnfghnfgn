@@ -10,6 +10,7 @@ on:
 jobs:
   first_job:
     runs-on: ubuntu-latest
+    if: false == true
     steps:
       - name: Run a simple step
         run: echo "First job completed."
