@@ -3,7 +3,7 @@ name: Condition Test Workflow
 on:
   workflow_dispatch:
   workflow_run:
-    workflows: ["Condition Test Workflow"]
+    workflows: ["Trigger Workflow"]
     types:
       - completed
 
