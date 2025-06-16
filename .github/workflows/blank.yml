@@ -13,6 +13,7 @@ jobs:
     strategy:
       matrix:
         should_fail: [false, true]
+    continue-on-error: true
     steps:
       - name: Echo matrix value
         run: echo "This matrix job should_fail=${{ matrix.should_fail }}"
@@ -29,8 +30,7 @@ jobs:
     needs: first_job
     runs-on: ubuntu-latest
     if: >
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') &&
-      needs.first_job.result != 'skipped'
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     steps:
       - name: Run if condition is met
         run: echo "Second job with full condition completed."
