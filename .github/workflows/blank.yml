@@ -10,10 +10,20 @@ on:
 jobs:
   first_job:
     runs-on: ubuntu-latest
-    if: false == true
+    strategy:
+      matrix:
+        should_fail: [false, true]
     steps:
-      - name: Run a simple step
-        run: echo "First job completed."
+      - name: Echo matrix value
+        run: echo "This matrix job should_fail=${{ matrix.should_fail }}"
+      - name: Pass or fail
+        run: |
+          if [ "${{ matrix.should_fail }}" = "true" ]; then
+            echo "This job is designed to fail."
+            exit 1
+          else
+            echo "This job is designed to pass."
+          fi
 
   second_job_with_condition:
     needs: first_job
