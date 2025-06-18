@@ -62,4 +62,4 @@ jobs:
         continue-on-error: true
       - name: Check for failed shards
         run: |
-          [ -n "$(find . -name "failed_*" -print -quit)" ] && exit 1
+          [ -n "$(find . -type f -name "failed_*" -print -quit)" ] && exit 1
