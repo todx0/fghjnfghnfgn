@@ -1,4 +1,4 @@
-name: Condition Test Workflow
+name: Condition Test Workflow (FAIL)
 
 on:
   workflow_dispatch:
