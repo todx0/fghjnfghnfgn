@@ -14,8 +14,6 @@ jobs:
       matrix:
         should_fail: [false, true]
     continue-on-error: true
-    outputs:
-      test-failed: ${{ steps.check-test-failure.outputs.failed }}
     steps:
       - name: Echo matrix value
         run: echo "This matrix job should_fail=${{ matrix.should_fail }}"
@@ -28,15 +26,6 @@ jobs:
           else
             echo "This job is designed to pass."
           fi
-      - name: Check if tests failed
-        id: check-test-failure
-        if: always()
-        run: |
-            if [[ "${{ steps.playwright-tests.outcome }}" == "failure" ]]; then
-                echo "failed=true" >> $GITHUB_OUTPUT
-            else
-                echo "failed=false" >> $GITHUB_OUTPUT
-            fi
 
   second_job_with_condition:
     needs: first_job
@@ -47,12 +36,21 @@ jobs:
       - name: Run if condition is met
         run: |
             echo "Second job with full condition completed."
-
-  check-test-results:
-   if: always()
-   needs: first_job
-   runs-on: ubuntu-latest
-   steps:
-       - name: Fail if tests failed
-         run: |
-            [[ "${{ contains(needs.first_job.outputs.test-failed, 'true') }}" == "true" ]] && exit 1 || echo "All tests passed"
+            
+  fail-this-workflow-if-any-test-failed:
+      if: always()
+      needs: first_job
+      runs-on: ubuntu-latest
+      steps:
+          - name: Check job conclusion
+            run: |
+                echo "Job result: ${{ needs.first_job.result }}"
+                echo "Job conclusion: ${{ needs.first_job.conclusion }}"
+                
+                # This is the key - check conclusion vs result
+                if [[ "${{ needs.first_job.conclusion }}" == "success" && "${{ needs.first_job.result }}" == "success" ]]; then
+                    echo "All tests actually passed"
+                else
+                    echo "Some tests failed but were ignored due to continue-on-error"
+                    exit 1
+                fi
