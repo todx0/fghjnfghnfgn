@@ -30,20 +30,17 @@ jobs:
         run: |
           if [ "${{ matrix.shard }}" = "1" ]; then
             echo "Shard 1 is forced to fail."
-            exit 1
           else
             echo "Shard ${{ matrix.shard }} passes."
           fi
 
       - name: Set outputs per shard
+        if: success() || failure()
         id: set_result
         run: |
-          result="passed"
-          if [ "${{ steps.pass_or_fail.outcome }}" = "failure" ]; then
-            result="failed"
-          fi
-
-          echo "shard_${{ matrix.shard }}=$result" >> $GITHUB_OUTPUT
+          echo "Outcome: ${{ steps.pass_or_fail.outcome }}"
+          echo "Result: ${{ steps.pass_or_fail.result }}"
+          echo "shard_${{ matrix.shard }}=${{ steps.pass_or_fail.outcome }}" >> $GITHUB_OUTPUT
 
   fail_workflow_run_if_tests_failed:
     needs: first_job
@@ -54,10 +51,10 @@ jobs:
 
       - name: Fail workflow if any shard failed
         run: |
-          if [ "${{ needs.first_job.outputs.shard_1 }}" = "failed" ] ||
-             [ "${{ needs.first_job.outputs.shard_2 }}" = "failed" ] ||
-             [ "${{ needs.first_job.outputs.shard_3 }}" = "failed" ] ||
-             [ "${{ needs.first_job.outputs.shard_4 }}" = "failed" ]; then
+          if [ "${{ needs.first_job.outputs.shard_1 }}" = "failure" ] ||
+             [ "${{ needs.first_job.outputs.shard_2 }}" = "failure" ] ||
+             [ "${{ needs.first_job.outputs.shard_3 }}" = "failure" ] ||
+             [ "${{ needs.first_job.outputs.shard_4 }}" = "failure" ]; then
             echo "At least one shard failed. Exiting with failure."
             exit 1
           fi
