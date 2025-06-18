@@ -54,13 +54,10 @@ jobs:
 
       - name: Fail workflow if any shard failed
         run: |
-          echo "Checking shard results..."
-          for shard in 1 2 3 4; do
-            result="${{ needs.first_job.outputs['shard_' + shard] }}"
-            echo "Shard $shard: $result"
-            if [ "$result" = "failed" ]; then
-              echo "Shard $shard failed. Failing workflow."
-              exit 1
-            fi
-          done
-          echo "All shards passed."
+          if [ "${{ needs.first_job.outputs.shard_1 }}" = "failed" ] ||
+             [ "${{ needs.first_job.outputs.shard_2 }}" = "failed" ] ||
+             [ "${{ needs.first_job.outputs.shard_3 }}" = "failed" ] ||
+             [ "${{ needs.first_job.outputs.shard_4 }}" = "failed" ]; then
+            echo "At least one shard failed. Exiting with failure."
+            exit 1
+          fi
