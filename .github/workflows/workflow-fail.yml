@@ -52,10 +52,10 @@ jobs:
 
       - name: Fail workflow if any shard failed
         run: |
-          if [ "${{ needs.first_job.outputs.shard_1 }}" = "failed" ] ||
-             [ "${{ needs.first_job.outputs.shard_2 }}" = "failed" ] ||
-             [ "${{ needs.first_job.outputs.shard_3 }}" = "failed" ] ||
-             [ "${{ needs.first_job.outputs.shard_4 }}" = "failed" ]; then
+          if [ "${{ needs.first_job.outputs.shard_1 }}" = "failure" ] ||
+             [ "${{ needs.first_job.outputs.shard_2 }}" = "failure" ] ||
+             [ "${{ needs.first_job.outputs.shard_3 }}" = "failure" ] ||
+             [ "${{ needs.first_job.outputs.shard_4 }}" = "failure" ]; then
             echo "At least one shard failed. Exiting with failure."
             exit 1
           fi
