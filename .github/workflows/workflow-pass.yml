@@ -8,7 +8,7 @@ on:
       - completed
 
 jobs:
-  first_job:
+  test:
     runs-on: ubuntu-latest
     continue-on-error: true
     strategy:
@@ -17,33 +17,41 @@ jobs:
         shard: [1, 2, 3, 4]
         shardTotal: [4]
     outputs:
-      shard_1: ${{ steps.set_result.outputs.shard_1 }}
-      shard_2: ${{ steps.set_result.outputs.shard_2 }}
-      shard_3: ${{ steps.set_result.outputs.shard_3 }}
-      shard_4: ${{ steps.set_result.outputs.shard_4 }}
+      shard_1: ${{ steps.run_result.outputs.shard_1 }}
+      shard_2: ${{ steps.run_result.outputs.shard_2 }}
+      shard_3: ${{ steps.run_result.outputs.shard_3 }}
+      shard_4: ${{ steps.run_result.outputs.shard_4 }}
     steps:
       - name: Show shard info
         run: echo "Running shard=${{ matrix.shard }} of total=${{ matrix.shardTotal }}"
 
-      - name: Pass or fail shard
-        id: pass_or_fail
+      - name: Run Playwright tests
+        id: tests
         run: |
           if [ "${{ matrix.shard }}" = "1" ]; then
             echo "Shard 1 is forced to fail."
+            exit 1
           else
             echo "Shard ${{ matrix.shard }} passes."
           fi
 
       - name: Set outputs per shard
         if: success() || failure()
-        id: set_result
+        id: run_result
         run: |
-          echo "Outcome: ${{ steps.pass_or_fail.outcome }}"
-          echo "Result: ${{ steps.pass_or_fail.result }}"
-          echo "shard_${{ matrix.shard }}=${{ steps.pass_or_fail.outcome }}" >> $GITHUB_OUTPUT
+          echo "shard_${{ matrix.shard }}=${{ steps.tests.outcome }}" >> $GITHUB_OUTPUT
 
+  merge-and-upload-playwright-reports:
+          if: >
+            (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+          needs: test
+          runs-on: ubuntu-24.04
+          steps:
+            - name: 'Upload report'
+              run: echo "Report uploaded"
+          
   fail_workflow_run_if_tests_failed:
-    needs: first_job
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Debug combined outputs
@@ -51,10 +59,10 @@ jobs:
 
       - name: Fail workflow if any shard failed
         run: |
-          if [ "${{ needs.first_job.outputs.shard_1 }}" = "failure" ] ||
-             [ "${{ needs.first_job.outputs.shard_2 }}" = "failure" ] ||
-             [ "${{ needs.first_job.outputs.shard_3 }}" = "failure" ] ||
-             [ "${{ needs.first_job.outputs.shard_4 }}" = "failure" ]; then
+          if [ "${{ needs.test.outputs.shard_1 }}" = "failure" ] ||
+             [ "${{ needs.test.outputs.shard_2 }}" = "failure" ] ||
+             [ "${{ needs.test.outputs.shard_3 }}" = "failure" ] ||
+             [ "${{ needs.test.outputs.shard_4 }}" = "failure" ]; then
             echo "At least one shard failed. Exiting with failure."
             exit 1
           fi
