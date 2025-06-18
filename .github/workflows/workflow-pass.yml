@@ -30,7 +30,6 @@ jobs:
         run: |
           if [ "${{ matrix.shard }}" = "1" ]; then
             echo "Shard 1 is forced to fail."
-            exit 1
           else
             echo "Shard ${{ matrix.shard }} passes."
           fi
@@ -55,14 +54,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Debug combined outputs
-        run: echo '${{ toJSON(needs.first_job.outputs) }}'
+        run: echo '${{ toJSON(needs.test.outputs) }}'
 
       - name: Fail workflow if any shard failed
         run: |
-          if [ "${{ needs.test.outputs.shard_1 }}" = "failure" ] ||
-             [ "${{ needs.test.outputs.shard_2 }}" = "failure" ] ||
-             [ "${{ needs.test.outputs.shard_3 }}" = "failure" ] ||
-             [ "${{ needs.test.outputs.shard_4 }}" = "failure" ]; then
-            echo "At least one shard failed. Exiting with failure."
-            exit 1
-          fi
+          case "${{ needs.test.outputs.shard_1 }} \
+                ${{ needs.test.outputs.shard_2 }} \
+                ${{ needs.test.outputs.shard_3 }} \
+                ${{ needs.test.outputs.shard_4 }}" in
+            *failure*) 
+              echo "At least one shard failed. Exiting with failure."
+              exit 1 
+              ;;
+          esac
