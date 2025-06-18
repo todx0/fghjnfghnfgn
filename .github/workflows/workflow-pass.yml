@@ -1,0 +1,58 @@
+name: Condition Test Workflow (PASS)
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Trigger Workflow"]
+    types:
+      - completed
+
+jobs:
+  first_job:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        should_fail: [false, false]
+    continue-on-error: true
+    outputs:
+      test-failed: ${{ steps.check-test-failure.outputs.failed }}
+    steps:
+      - name: Echo matrix value
+        run: echo "This matrix job should_fail=${{ matrix.should_fail }}"
+      - name: Pass or fail
+        id: playwright-tests
+        run: |
+          if [ "${{ matrix.should_fail }}" = "true" ]; then
+            echo "This job is designed to fail."
+            exit 1
+          else
+            echo "This job is designed to pass."
+          fi
+      - name: Check if tests failed
+        id: check-test-failure
+        if: always()
+        run: |
+            if [[ "${{ steps.playwright-tests.outcome }}" == "failure" ]]; then
+                echo "failed=true" >> $GITHUB_OUTPUT
+            else
+                echo "failed=false" >> $GITHUB_OUTPUT
+            fi
+
+  second_job_with_condition:
+    needs: first_job
+    runs-on: ubuntu-latest
+    if: >
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    steps:
+      - name: Run if condition is met
+        run: |
+            echo "Second job with full condition completed."
+
+  check-test-results:
+   if: always()
+   needs: first_job
+   runs-on: ubuntu-latest
+   steps:
+       - name: Fail if tests failed
+         run: |
+            [[ "${{ contains(needs.first_job.outputs.test-failed, 'true') }}" == "true" ]] && exit 1 || echo "All tests passed"
