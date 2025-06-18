@@ -36,6 +36,7 @@ jobs:
           fi
 
       - name: Set outputs per shard
+        if: success() || failure()
         id: set_result
         run: |
           echo "Outcome: ${{ steps.pass_or_fail.outcome }}"
