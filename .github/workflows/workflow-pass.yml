@@ -61,4 +61,5 @@ jobs:
           path: .
         continue-on-error: true
       - name: Check for failed shards
-        run: find . -name "failed_*" | read && exit 1
+        run: | 
+          [ -n "$(find . -name "failed_*" -print -quit)" ] && exit 1
