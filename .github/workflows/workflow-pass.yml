@@ -1,4 +1,4 @@
-name: Condition Test Workflow (PASS)
+name: Condition Test Workflow (FAIL)
 
 on:
   workflow_dispatch:
@@ -14,41 +14,35 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        should_fail: [false, true]
+        shard: [1, 2, 3, 4]
+        shardTotal: [4]
     outputs:
-      shard_${{ matrix.should_fail }}: ${{ steps.set_result.outputs.shard }}
+      shard_1: ${{ steps.set_result.outputs.shard_1 }}
+      shard_2: ${{ steps.set_result.outputs.shard_2 }}
+      shard_3: ${{ steps.set_result.outputs.shard_3 }}
+      shard_4: ${{ steps.set_result.outputs.shard_4 }}
     steps:
-      - name: Echo matrix value
-        run: echo "This matrix job should_fail=${{ matrix.should_fail }}"
+      - name: Show shard info
+        run: echo "Running shard=${{ matrix.shard }} of total=${{ matrix.shardTotal }}"
 
-      - name: Pass or fail
+      - name: Pass or fail shard
         id: pass_or_fail
         run: |
-          if [ "${{ matrix.should_fail }}" = "true" ]; then
-            echo "This job is designed to fail."
-            exit 1
+          if [ "${{ matrix.shard }}" = "1" ]; then
+            echo "Shard 1 is forced to fail."
           else
-            echo "This job is designed to pass."
+            echo "Shard ${{ matrix.shard }} passes."
           fi
 
-      - name: Set output for shard result
+      - name: Set outputs per shard
         id: set_result
         run: |
+          result="passed"
           if [ "${{ steps.pass_or_fail.outcome }}" = "failure" ]; then
-            echo "shard=failed" >> $GITHUB_OUTPUT
-          else
-            echo "shard=passed" >> $GITHUB_OUTPUT
+            result="failed"
           fi
 
-  second_job_with_condition:
-    needs: first_job
-    runs-on: ubuntu-latest
-    if: >
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
-    steps:
-      - name: Run if condition is met
-        run: |
-          echo "Second job with full condition completed."
+          echo "shard_${{ matrix.shard }}=$result" >> $GITHUB_OUTPUT
 
   fail_workflow_run_if_tests_failed:
     needs: first_job
@@ -59,11 +53,13 @@ jobs:
 
       - name: Fail workflow if any shard failed
         run: |
-          echo "Checking matrix outputs..."
-          for shard in "${{ needs.first_job.outputs.shard_false }}" "${{ needs.first_job.outputs.shard_true }}"; do
-            echo "Shard result: $shard"
-            if [ "$shard" = "failed" ]; then
-              echo "At least one shard failed. Failing workflow..."
+          echo "Checking shard results..."
+          for shard in 1 2 3 4; do
+            result="${{ needs.first_job.outputs['shard_' + shard] }}"
+            echo "Shard $shard: $result"
+            if [ "$result" = "failed" ]; then
+              echo "Shard $shard failed. Failing workflow."
               exit 1
             fi
           done
+          echo "All shards passed."
