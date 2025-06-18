@@ -59,13 +59,8 @@ jobs:
         with:
           name: failed-shards
           path: .
-
       - name: Check for failed shards
         run: |
-          if ls failed-* 2>/dev/null; then
-            echo "Detected failed shards:"
-            cat failed-*
+          if find . -name "failed_*" | grep .; then
             exit 1
-          else
-            echo "No failed shards detected."
           fi
