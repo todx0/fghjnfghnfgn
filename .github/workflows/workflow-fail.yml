@@ -11,9 +11,9 @@ jobs:
   first_job:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         should_fail: [false, true]
-    continue-on-error: true
     steps:
       - name: Echo matrix value
         run: echo "This matrix job should_fail=${{ matrix.should_fail }}"
@@ -31,26 +31,9 @@ jobs:
     needs: first_job
     runs-on: ubuntu-latest
     if: >
+      (needs.first_job.result == 'success' || needs.first_job.result == 'failure') &&
       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     steps:
       - name: Run if condition is met
         run: |
             echo "Second job with full condition completed."
-            
-  fail-this-workflow-if-any-test-failed:
-      if: always()
-      needs: first_job
-      runs-on: ubuntu-latest
-      steps:
-          - name: Check job conclusion
-            run: |
-                echo "Job result: ${{ needs.first_job.result }}"
-                echo "Job conclusion: ${{ needs.first_job.conclusion }}"
-                
-                # This is the key - check conclusion vs result
-                if [[ "${{ needs.first_job.conclusion }}" == "success" && "${{ needs.first_job.result }}" == "success" ]]; then
-                    echo "All tests actually passed"
-                else
-                    echo "Some tests failed but were ignored due to continue-on-error"
-                    exit 1
-                fi
