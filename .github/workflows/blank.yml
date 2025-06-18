@@ -33,16 +33,9 @@ jobs:
       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     steps:
       - name: Run if condition is met
-        run: echo "Second job with full condition completed."
-
-  third_job_without_condition:
-    needs: first_job
-    runs-on: ubuntu-latest
-    if: >
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
-    steps:
-      - name: Run if condition is met
-        run: echo "Third job without redundant condition completed."
+        run: |
+            echo "Second job with full condition completed."
+            echo "Outcome: ${{ steps.first_job.outcome }}"
 
   fail_workflow_run_if_tests_failed:
     needs: first_job
