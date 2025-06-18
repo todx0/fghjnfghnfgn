@@ -43,3 +43,12 @@ jobs:
     steps:
       - name: Run if condition is met
         run: echo "Third job without redundant condition completed."
+
+  fail_workflow_run_if_tests_failed:
+    needs: first_job
+    runs-on: ubuntu-latest
+    if: needs.first_job.result == 'failure' ||
+        needs.first_job.result == 'cancelled' ||
+        needs.first_job.result == 'skipped'
+    steps:
+      - run: exit 1
