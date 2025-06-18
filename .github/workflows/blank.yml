@@ -55,4 +55,4 @@ jobs:
    steps:
        - name: Fail if tests failed
          run: |
-             [[ "${{ contains(needs.test.outputs.test-failed, 'true') }}" == "true" ]] && exit 1 || echo "All tests passed"
+            [[ "${{ contains(needs.first_job.outputs.test-failed, 'true') }}" == "true" ]] && exit 1 || echo "All tests passed"
