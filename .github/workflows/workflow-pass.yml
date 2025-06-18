@@ -1,0 +1,66 @@
+name: Condition Test Workflow (FAIL)
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Trigger Workflow"]
+    types:
+      - completed
+
+jobs:
+  first_job:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        should_fail: [false, false]
+    steps:
+      - name: Echo matrix value
+        run: echo "This matrix job should_fail=${{ matrix.should_fail }}"
+      - name: Pass or fail
+        id: playwright-tests
+        run: |
+          if [ "${{ matrix.should_fail }}" = "true" ]; then
+            echo "This job is designed to fail."
+            exit 1
+          else
+            echo "This job is designed to pass."
+          fi
+          
+      - name: Mark failed shard
+        if: failure()
+        run: echo "failed-${{ matrix.should_fail }}" > failed_shard.txt
+
+      - name: Upload fail marker
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failed-shards
+          path: failed_shard.txt
+
+  second_job_with_condition:
+    needs: first_job
+    runs-on: ubuntu-latest
+    if: >
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    steps:
+      - name: Run if condition is met
+        run: |
+            echo "Second job with full condition completed."
+
+
+  fail_workflow_run_if_tests_failed:
+    needs: first_job
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download failed shards artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: failed-shards
+          path: .
+      - name: Check for failed shards
+        run: |
+          if find . -name "failed_*" | grep .; then
+            exit 1
+          fi
